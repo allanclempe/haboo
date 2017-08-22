@@ -5,7 +5,7 @@ import { connect, Dispatch } from "react-redux";
 import { IUserProfile } from "@haboo/haboo-sdk";
 
 import { userDispatcher } from "../flux/actions";
-import { IUserLoginState } from "../flux/stores";
+import { IUserState, mapProfileToUserState } from "../flux/stores";
 
 import {
     Button,
@@ -13,20 +13,21 @@ import {
     Layout,
     FormLayout,
     TextField,
+    ButtonGroup
 } from "@shopify/polaris";
 
-interface IUserProfileProp {
+interface IUserProfileProp extends IUserProfile {
     logout(): void;
 }
 
-class Profile extends React.Component<IUserProfile & IUserProfileProp, any> {
+class Profile extends React.Component<IUserProfileProp, IUserState> {
     public static contextTypes = {
         router: PropTypes.object,
         store: PropTypes.object,
     };
 
     private router: any;
-    private store: Store<IUserLoginState>;
+    private store: Store<IUserState>;
     private unsubscribe: Unsubscribe;
 
     constructor(props: any, context: any) {
@@ -45,6 +46,12 @@ class Profile extends React.Component<IUserProfile & IUserProfileProp, any> {
         });
     }
 
+    public componentDidUpdate() {
+        if (!this.state.isAuthenticated) {
+            this.router.history.push("/");
+        }
+    }
+
     public componentWillUnmount() {
         this.unsubscribe();
     }
@@ -61,9 +68,15 @@ class Profile extends React.Component<IUserProfile & IUserProfileProp, any> {
                     title="Profile"
                     description="User profile."
                 >
-                    <h1>Hi {firstName}</h1>
+                    <Card title="Your account details" sectioned>
+                        <p>First Name: {firstName}</p>
+                        <p>Last Name: {lastName}</p>
+                        <br />
+                        <ButtonGroup>
+                            <Button destructive disabled={isFetching} onClick={this.onlogout}>Logout</Button>
+                        </ButtonGroup>
+                    </Card>
 
-                    <Button destructive disabled={isFetching} onClick={this.onlogout}>Logout</Button>
                 </Layout.AnnotatedSection>
             </Layout>
         );
@@ -71,6 +84,4 @@ class Profile extends React.Component<IUserProfile & IUserProfileProp, any> {
 
 }
 
-export default connect((state: any, props: IUserProfile) => {
-    return Object.assign(state, props);
-}, userDispatcher)(Profile);
+export default connect(mapProfileToUserState, userDispatcher)(Profile);

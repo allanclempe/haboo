@@ -2,8 +2,7 @@ import { ErrorResponse } from "./";
 
 export default class HabooSdk {
 
-    constructor(private apiUrl: string, private publicKey: string, private tokenGet: () => string) {
-
+    constructor(private apiUrl: string, private tokenGet: () => string) {
     }
 
     private checkStatus = (response: Response) => {
@@ -29,7 +28,10 @@ export default class HabooSdk {
         };
 
         if (!!token) {
-            headers = Object.assign(headers, { "Authorization": `Bearer ${token}` });
+            // tslint:disable-next-line:prefer-object-spread
+            headers = Object.assign(headers, {
+                Authorization: `Bearer ${token}`
+            });
         }
 
         return fetch(`${this.apiUrl}${url}`, {
@@ -49,11 +51,18 @@ export default class HabooSdk {
         return this.fetchReq(url, "POST", null);
     }
 
-    public login(email: string, password: string) {
-        return this.fetchPost("/api/identity/user/cms/login", {
-            public_key: this.publicKey,
+    public signin(email: string, password: string) {
+        return this.fetchPost("/api/identity/user/login", {
             email,
             password
         });
+    }
+
+    public signup(user: any) {
+        return this.fetchPost("/api/identity/user", user);
+    }
+
+    public createOrganization(organization: any) {
+        return this.fetchPost("/api/identity/environment", organization);
     }
 }

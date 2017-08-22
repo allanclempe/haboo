@@ -5,4 +5,5 @@ export interface IUserProfile {
     email: string;
     env: string;
     projectId: string;
+    god: boolean;
 }

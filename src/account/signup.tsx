@@ -2,12 +2,10 @@ import * as React from "react";
 import * as PropTypes from "prop-types";
 import { Store, Unsubscribe } from "redux";
 import { connect, Dispatch } from "react-redux";
-import HabooSdk from "@haboo/haboo-sdk";
+import { IUserProfile } from "@haboo/haboo-sdk";
 
-import { config } from "../config";
-import Menu from "../app/Menu";
 import { userDispatcher } from "../flux/actions";
-import { IUserLoginState } from "../flux/stores";
+import { IUserState, mapProfileToUserState, userInitialState } from "../flux/stores";
 
 import {
     Button,
@@ -15,17 +13,21 @@ import {
     Layout,
     FormLayout,
     TextField,
+    ButtonGroup
 } from "@shopify/polaris";
 
-class Login extends React.Component<any, IUserLoginState> {
+interface IUserSignupProp {
+    signup(user: any): void;
+}
 
+class Signup extends React.Component<IUserSignupProp, IUserState> {
     public static contextTypes = {
         router: PropTypes.object,
         store: PropTypes.object,
     };
 
     private router: any;
-    private store: Store<IUserLoginState>;
+    private store: Store<IUserState>;
     private unsubscribe: Unsubscribe;
 
     constructor(props: any, context: any) {
@@ -33,23 +35,21 @@ class Login extends React.Component<any, IUserLoginState> {
 
         this.store = context.store;
         this.router = context.router;
-        this.state = this.store.getState();
+        this.state = userInitialState;
 
         this.onsubmit = this.onsubmit.bind(this);
-        this.valueUpdater = this.valueUpdater.bind(this);
     }
 
     public componentWillMount() {
         this.unsubscribe = this.store.subscribe(() => {
-
-            const newState = this.store.getState();
-
-            if (newState.isAuthenticated) {
-                return this.router.history.push("/sales");
-            }
-
-            this.setState(newState);
+            this.setState(this.store.getState());
         });
+    }
+
+    public componentDidUpdate() {
+        if (this.state.isAuthenticated) {
+            this.router.history.push("/account/profile");
+        }
     }
 
     public componentWillUnmount() {
@@ -63,7 +63,7 @@ class Login extends React.Component<any, IUserLoginState> {
 
     public onsubmit() {
         if (this.isValid()) {
-            this.props.login(this.state);
+            this.props.signup(this.state);
         }
     }
 
@@ -72,40 +72,54 @@ class Login extends React.Component<any, IUserLoginState> {
     }
 
     public render() {
-        const { errors, email, password, isFetching } = this.state;
-      
+        const { firstName, lastName, password, isFetching } = this.state;
         return (
             <Layout>
+
                 <Layout.AnnotatedSection
-                    title="Login"
-                    description="User login."
+                    title="Form"
+                    description="A sample form using Polaris components."
                 >
                     <Card sectioned>
                         <FormLayout>
+                            <FormLayout.Group>
+                                <TextField
+                                    value={this.state.firstName}
+                                    label="First Name"
+                                    placeholder="Tom"
+                                    onChange={this.valueUpdater("firstName")}
+                                />
+                                <TextField
+                                    value={this.state.lastName}
+                                    label="Last Name"
+                                    placeholder="Ford"
+                                    onChange={this.valueUpdater("lastName")}
+                                />
+                            </FormLayout.Group>
+
                             <TextField
-                                value={email}
+                                value={this.state.email}
                                 label="Email"
                                 placeholder="example@email.com"
                                 onChange={this.valueUpdater("email")}
                             />
+
                             <TextField
-                                value={password}
+                                value={this.state.password}
                                 label="Password"
-                                placeholder="Password"
                                 type="password"
+                                placeholder="Password"
                                 onChange={this.valueUpdater("password")}
                             />
 
-                            <div>
-                                {Object.keys(errors).map((item, index) => (<div key={index}>{errors[item]}</div>))}
-                            </div>
-
-                            <Button primary disabled={isFetching} onClick={this.onsubmit}>Submit</Button>
+                            <Button primary onClick={this.onsubmit}>Create my account</Button>
                         </FormLayout>
                     </Card>
                 </Layout.AnnotatedSection>
-            </Layout>);
+            </Layout>
+        );
     }
+
 }
 
-export default connect((state: IUserLoginState) => state, userDispatcher)(Login);
+export default connect(null, userDispatcher)(Signup);
